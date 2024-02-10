@@ -62,7 +62,7 @@ private:
     std::unordered_map<std::string, std::string> m_map;
 };
 
-constexpr auto TESTS_ROOT_DIR = "/home/george/Projects/code-comprehension/test";
+std::string TESTS_ROOT_DIR = "";
 
 static void add_file(LocalFileDB& filedb, std::string const& name)
 {
@@ -256,7 +256,36 @@ void test_parameters_hint()
     PASS;
 }
 
+void test_ast_cpp() {
+    I_TEST("Find Variable Declaration in AST.cpp")
+    auto filename = "AST.cpp";
+    LocalFileDB filedb;
+    add_file(filedb, filename);
+    CodeComprehension::Cpp::CppComprehensionEngine engine(filedb);
+    auto position = engine.find_declaration_of(filename, { 99, 13 });
+    if (!position.has_value())
+        FAIL("declaration not found");
+
+    if (position.value().file == filename && position.value().line == 96 && position.value().column >= 4)
+        PASS;
+    FAIL("wrong declaration location");
+}
+
+std::string read_first_line(const char* filePath) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        throw std::runtime_error(fmt::format("Error opening file: {}", filePath));
+    }
+
+    std::string line;
+    std::getline(file, line);
+
+    return line;
+}
+
 int main(int argc, char* argv[]) {
+    TESTS_ROOT_DIR = read_first_line("project_source_dir.txt") + "/test";
+
     test_complete_local_args();
     test_complete_local_vars();
     test_complete_type();
@@ -266,5 +295,6 @@ int main(int argc, char* argv[]) {
     test_find_array_variable_declaration_double();
     test_complete_includes();
     test_parameters_hint();
+    test_ast_cpp();
     return 0;
 }
