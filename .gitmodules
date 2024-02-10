@@ -1,0 +1,3 @@
+[submodule "extlibs/cpp-parser"]
+	path = extlibs/cpp-parser
+	url = https://github.com/georgegerdin/cpp-parser.git
