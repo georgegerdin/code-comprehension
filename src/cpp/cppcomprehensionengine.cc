@@ -473,8 +473,8 @@ static std::optional<TargetDeclaration> get_target_declaration(ASTNode const& no
         return get_target_declaration(*node.parent(), std::string{assert_cast<Cpp::Declaration>(node.parent())->full_name()});
     }
 
-    dbgln("get_target_declaration: Invalid argument node of type: {}", node.class_name());
-    return {};
+    //dbgln("get_target_declaration: Invalid argument node of type: {}", node.class_name());
+    return std::nullopt;
 }
 
 static std::optional<TargetDeclaration> get_target_declaration(ASTNode const& node, std::string name)
