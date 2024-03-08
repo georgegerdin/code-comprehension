@@ -12,6 +12,7 @@ add_executable(test
     main.cc
 )
 
+target_include_directories(code-comprehension PUBLIC .)
 target_link_libraries(code-comprehension PUBLIC cpp-parser)
 target_link_libraries(test PUBLIC code-comprehension)
 
