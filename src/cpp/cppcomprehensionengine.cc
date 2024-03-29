@@ -372,7 +372,7 @@ std::string CppComprehensionEngine::document_path_from_include_path(std::string_
 
         if (!std::regex_search(include_path, result, library_include))
             return std::nullopt;
-        auto path = result[0].str();
+        auto path = result[1].str();
         return fmt::format("/usr/include/{}", path);
     };
 
@@ -380,7 +380,7 @@ std::string CppComprehensionEngine::document_path_from_include_path(std::string_
         std::smatch result;
         if (!std::regex_search(include_path, result, user_defined_include))
             return std::nullopt;
-        return result[0].str();
+        return result[1].str();
     };
 
     auto result = document_path_for_library_include(std::string{include_path});
