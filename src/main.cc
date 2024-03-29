@@ -130,6 +130,33 @@ void test_complete_type()
     FAIL("wrong results");
 }
 
+void test_find_function_declaration()
+{
+    I_TEST("Find Function Declaration");
+    LocalFileDB filedb;
+    add_file(filedb, "find_function_declaration.cc");
+    add_file(filedb, "sample_header.hh");
+    CodeComprehension::Cpp::CppComprehensionEngine engine(filedb);
+
+    // Find function declaration in the same file
+    auto position = engine.find_declaration_of("find_function_declaration.cc", { 5, 6 });
+    if (!position.has_value())
+        FAIL("declaration not found (1)");
+
+    if (position.value().file != "find_function_declaration.cc" || position.value().line != 1)
+        FAIL("wrong declaration location (1)");
+
+    // Find function declaration in header
+    position = engine.find_declaration_of("find_function_declaration.cc", { 6, 6 });
+    if (!position.has_value())
+        FAIL("declaration not found (2)");
+
+    if (position.value().file == "sample_header.hh" && position.value().line == 2)
+        PASS;
+
+    FAIL("wrong declaration location (2)");
+}
+
 void test_find_variable_definition()
 {
     I_TEST(Find Variable Declaration)
@@ -314,6 +341,7 @@ int main(int argc, char* argv[]) {
     test_complete_local_args();
     test_complete_local_vars();
     test_complete_type();
+    test_find_function_declaration();
     test_find_variable_definition();
     test_find_array_variable_declaration_single();
     test_find_array_variable_declaration_single_empty();
