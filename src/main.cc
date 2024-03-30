@@ -48,7 +48,6 @@ public:
         std::string target_filename = std::string{filename};
         if (project_root().has_value() && filename.starts_with(*project_root())) {
             target_filename = std::filesystem::relative(filename, *project_root());
-            dbgln("relative path: {}", target_filename.c_str());
         }
 
         auto result = m_map.find(target_filename);
@@ -139,7 +138,7 @@ void test_find_function_declaration()
     CodeComprehension::Cpp::CppComprehensionEngine engine(filedb);
 
     // Find function declaration in the same file
-    auto position = engine.find_declaration_of("find_function_declaration.cc", { 5, 6 });
+    auto position = engine.find_declaration_of("find_function_declaration.cc", { 10, 6 });
     if (!position.has_value())
         FAIL("declaration not found (1)");
 
@@ -147,14 +146,22 @@ void test_find_function_declaration()
         FAIL("wrong declaration location (1)");
 
     // Find function declaration in header
-    position = engine.find_declaration_of("find_function_declaration.cc", { 6, 6 });
+    position = engine.find_declaration_of("find_function_declaration.cc", { 11, 6 });
     if (!position.has_value())
         FAIL("declaration not found (2)");
 
-    if (position.value().file == "sample_header.hh" && position.value().line == 2)
-        PASS;
+    if (position.value().file != "sample_header.hh" && position.value().line != 2)
+        FAIL("wrong declaration location (2)");
 
-    FAIL("wrong declaration location (2)");
+    // Find member function declaration
+    position = engine.find_declaration_of("find_function_declaration.cc", { 13, 8 });
+    if (!position.has_value())
+        FAIL("declaration not found (3)");
+
+    if (position.value().file != "find_function_declaration.cc" || position.value().line != 4)
+        FAIL("wrong declaration location (3)");
+
+    PASS;
 }
 
 void test_find_variable_definition()
