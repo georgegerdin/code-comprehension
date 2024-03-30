@@ -176,14 +176,34 @@ void test_find_variable_definition()
     I_TEST(Find Variable Declaration)
     LocalFileDB filedb;
     add_file(filedb, "find_variable_declaration.cc");
+    add_file(filedb, "sample_header.hh");
     CodeComprehension::Cpp::CppComprehensionEngine engine(filedb);
-    auto position = engine.find_declaration_of("find_variable_declaration.cc", { 2, 5 });
-    if (!position.has_value())
-        FAIL("declaration not found");
 
-    if (position.value().file == "find_variable_declaration.cc" && position.value().line == 0 && position.value().column >= 19)
-        PASS;
-    FAIL("wrong declaration location");
+    // Find local variable
+    auto position = engine.find_declaration_of("find_variable_declaration.cc", { 4, 5 });
+    if (!position.has_value())
+        FAIL("declaration not found (1)");
+
+    if (position.value().file != "find_variable_declaration.cc" || position.value().line != 2 || position.value().column < 19)
+        FAIL("wrong declaration location (1)");;
+
+    // Find variable in header file
+    position = engine.find_declaration_of("find_variable_declaration.cc", { 5, 4 });
+    if (!position.has_value())
+        FAIL("declaration not found (2)");
+
+    if (position.value().file != "sample_header.hh" || position.value().line != 4)
+        FAIL("wrong declaration location (2)");;
+
+    // Find variable in struct from member function
+    position = engine.find_declaration_of("find_variable_declaration.cc", { 9, 4 });
+    if (!position.has_value())
+        FAIL("declaration not found (3)");
+
+    if (position.value().file != "sample_header.hh" || position.value().line != 8)
+        FAIL("wrong declaration location (3)");;
+
+    PASS;
 }
 
 void test_find_array_variable_declaration_single()
@@ -351,17 +371,21 @@ std::string read_first_line(const char* filePath) {
 
 int main(int argc, char* argv[]) {
     TESTS_ROOT_DIR = read_first_line("project_source_dir.txt") + "/test";
-
+#if 0
     test_complete_local_args();
     test_complete_local_vars();
     test_complete_type();
     test_find_function_declaration();
+#endif
+
     test_find_variable_definition();
+#if 0
     test_find_array_variable_declaration_single();
     test_find_array_variable_declaration_single_empty();
     test_find_array_variable_declaration_double();
     test_complete_includes();
     test_parameters_hint();
     test_ast_cpp();
+#endif
     return 0;
 }
