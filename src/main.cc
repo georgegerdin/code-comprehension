@@ -161,6 +161,13 @@ void test_find_function_declaration()
     if (position.value().file != "find_function_declaration.cc" || position.value().line != 4)
         FAIL("wrong declaration location (3)");
 
+    // Find member function declaration from within a function declaration
+    position = engine.find_declaration_of("find_function_declaration.cc", { 17, 6 });
+    if (!position.has_value())
+        FAIL("declaration not found (4)");
+
+    if (position.value().file != "find_function_declaration.cc" || position.value().line != 5)
+        FAIL("wrong declaration location (4)");
     PASS;
 }
 
