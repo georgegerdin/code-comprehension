@@ -527,6 +527,7 @@ intrusive_ptr<Cpp::Declaration const> CppComprehensionEngine::find_declaration_o
         bool match_parameter = target_decl.value().type == TargetDeclaration::Variable && symbol.declaration->is_parameter();
         bool match_scope = target_decl.value().type == TargetDeclaration::Scope && (symbol.declaration->is_namespace() || symbol.declaration->is_struct_or_class());
 
+        dbgln("{}", symbol.name.name);
         if (match_property) {
             // FIXME: This is not really correct, we also need to check that the type of the struct/class matches (not just the property name)
             if (symbol.name.name == target_decl.value().name) {
@@ -675,9 +676,13 @@ std::vector<std::string_view> CppComprehensionEngine::scope_of_node(ASTNode cons
         containing_scope = static_cast<NamespaceDeclaration const&>(parent_decl).full_name();
     if (parent_decl.is_struct_or_class())
         containing_scope = static_cast<StructOrClassDeclaration const&>(parent_decl).full_name();
-    if (parent_decl.is_function())
-        containing_scope = static_cast<FunctionDeclaration const&>(parent_decl).full_name();
-
+    if (parent_decl.is_function()) {
+        containing_scope = static_cast<FunctionDeclaration const &>(parent_decl).full_name();
+        auto last_scope_operator = containing_scope.rfind("::");
+        if(last_scope_operator != std::string::npos) {
+            parent_scope.push_back(containing_scope.substr(0, last_scope_operator));
+        }
+    }
     parent_scope.push_back(containing_scope);
     return parent_scope;
 }
