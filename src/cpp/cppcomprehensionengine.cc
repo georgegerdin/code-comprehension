@@ -473,7 +473,7 @@ static std::optional<TargetDeclaration> get_target_declaration(ASTNode const& no
         return get_target_declaration(*node.parent(), std::string{assert_cast<Cpp::Declaration>(node.parent())->full_name()});
     }
 
-    //dbgln("get_target_declaration: Invalid argument node of type: {}", node.class_name());
+    dbgln("get_target_declaration: Invalid argument node of type: {}", node.class_name());
     return std::nullopt;
 }
 
@@ -527,7 +527,6 @@ intrusive_ptr<Cpp::Declaration const> CppComprehensionEngine::find_declaration_o
         bool match_parameter = target_decl.value().type == TargetDeclaration::Variable && symbol.declaration->is_parameter();
         bool match_scope = target_decl.value().type == TargetDeclaration::Scope && (symbol.declaration->is_namespace() || symbol.declaration->is_struct_or_class());
 
-        dbgln("{}", symbol.name.name);
         if (match_property) {
             // FIXME: This is not really correct, we also need to check that the type of the struct/class matches (not just the property name)
             if (symbol.name.name == target_decl.value().name) {
