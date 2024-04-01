@@ -16,6 +16,23 @@
 
 constexpr bool CPP_LANGUAGE_SERVER_DEBUG = false;
 
+std::vector<std::string_view> split_view(const std::string_view str, const std::string_view delimiter) {
+    std::vector<std::string_view> result;
+    size_t pos = 0;
+
+    while (pos != std::string_view::npos) {
+        size_t nextPos = str.find(delimiter, pos);
+        if (nextPos == std::string_view::npos) {
+            result.push_back(str.substr(pos));
+        } else {
+            result.push_back(str.substr(pos, nextPos - pos));
+        }
+        pos = (nextPos == std::string_view::npos) ? nextPos : nextPos + delimiter.size();
+    }
+
+    return result;
+}
+
 namespace CodeComprehension::Cpp {
 
 CppComprehensionEngine::CppComprehensionEngine(FileDB const& filedb)
@@ -332,7 +349,15 @@ std::vector<CppComprehensionEngine::Symbol> CppComprehensionEngine::properties_o
 
 CppComprehensionEngine::Symbol CppComprehensionEngine::Symbol::create(std::string_view name, std::vector<std::string_view> const& scope, intrusive_ptr<Cpp::Declaration const> declaration, IsLocal is_local)
 {
-    return { { name, scope }, std::move(declaration), is_local == IsLocal::Yes };
+    std::vector<std::string_view> resultant_scope_vector;
+
+    for(auto const& scope_entry : scope) {
+        auto parts = split_view(scope_entry, "::");
+        for(auto const& part : parts)
+            resultant_scope_vector.push_back(part);
+    }
+
+    return { { name, resultant_scope_vector }, std::move(declaration), is_local == IsLocal::Yes };
 }
 
 std::vector<CppComprehensionEngine::Symbol> CppComprehensionEngine::get_child_symbols(ASTNode const& node) const
@@ -473,7 +498,7 @@ static std::optional<TargetDeclaration> get_target_declaration(ASTNode const& no
         return get_target_declaration(*node.parent(), std::string{assert_cast<Cpp::Declaration>(node.parent())->full_name()});
     }
 
-    dbgln("get_target_declaration: Invalid argument node of type: {}", node.class_name());
+    //dbgln("get_target_declaration: Invalid argument node of type: {}", node.class_name());
     return std::nullopt;
 }
 
@@ -526,6 +551,9 @@ intrusive_ptr<Cpp::Declaration const> CppComprehensionEngine::find_declaration_o
         bool match_property = target_decl.value().type == TargetDeclaration::Property && symbol.declaration->parent()->is_declaration() && assert_cast<Cpp::Declaration>(symbol.declaration->parent())->is_struct_or_class();
         bool match_parameter = target_decl.value().type == TargetDeclaration::Variable && symbol.declaration->is_parameter();
         bool match_scope = target_decl.value().type == TargetDeclaration::Scope && (symbol.declaration->is_namespace() || symbol.declaration->is_struct_or_class());
+
+        if(target_decl->name == "another_foo" && symbol.name.name == "another_foo")
+            dbgln("looking for another_foo");
 
         if (match_property) {
             // FIXME: This is not really correct, we also need to check that the type of the struct/class matches (not just the property name)
@@ -677,11 +705,16 @@ std::vector<std::string_view> CppComprehensionEngine::scope_of_node(ASTNode cons
         containing_scope = static_cast<StructOrClassDeclaration const&>(parent_decl).full_name();
     if (parent_decl.is_function()) {
         containing_scope = static_cast<FunctionDeclaration const &>(parent_decl).full_name();
-        auto last_scope_operator = containing_scope.rfind("::");
-        if(last_scope_operator != std::string::npos) {
-            parent_scope.push_back(containing_scope.substr(0, last_scope_operator));
+        size_t start = 0;
+        size_t end = containing_scope.find("::");
+        while (end != std::string::npos) {
+            parent_scope.push_back(containing_scope.substr(start, end - start));
+            start = end + strlen("::");
+            end = containing_scope.find("::", start);
         }
+        containing_scope = containing_scope.substr(start, end - start);
     }
+
     parent_scope.push_back(containing_scope);
     return parent_scope;
 }
@@ -796,25 +829,17 @@ std::string CppComprehensionEngine::SymbolName::scope_as_string() const
 
 CppComprehensionEngine::SymbolName CppComprehensionEngine::SymbolName::create(std::string_view name, std::vector<std::string_view>&& scope)
 {
-    return { name, move(scope) };
-}
+    std::vector<std::string_view> resultant_scope_vector;
 
-std::vector<std::string_view> split_view(const std::string_view str, const std::string_view delimiter) {
-    std::vector<std::string_view> result;
-    size_t pos = 0;
-
-    while (pos != std::string_view::npos) {
-        size_t nextPos = str.find(delimiter, pos);
-        if (nextPos == std::string_view::npos) {
-            result.push_back(str.substr(pos));
-        } else {
-            result.push_back(str.substr(pos, nextPos - pos));
-        }
-        pos = (nextPos == std::string_view::npos) ? nextPos : nextPos + delimiter.size();
+    for(auto const& scope_entry : scope) {
+        auto parts = split_view(scope_entry, "::");
+        for(auto const& part : parts)
+            resultant_scope_vector.push_back(part);
     }
 
-    return result;
+    return CppComprehensionEngine::SymbolName{ name, move(resultant_scope_vector) };
 }
+
 
 CppComprehensionEngine::SymbolName CppComprehensionEngine::SymbolName::create(std::string_view qualified_name)
 {
