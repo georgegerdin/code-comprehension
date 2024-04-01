@@ -206,6 +206,33 @@ void test_find_variable_definition()
     PASS;
 }
 
+void test_namespace()
+{
+    I_TEST(Find Variable Declaration)
+    LocalFileDB filedb;
+    add_file(filedb, "find_symbol_in_namespace.cc");
+    CodeComprehension::Cpp::CppComprehensionEngine engine(filedb);
+
+    // Find local variable
+    auto position = engine.find_declaration_of("find_symbol_in_namespace.cc", { 8, 7 });
+    if (!position.has_value())
+        FAIL("declaration not found (1)");
+
+
+    if (position.value().file != "find_symbol_in_namespace.cc" || position.value().line != 3 || position.value().column != 4)
+        FAIL("wrong declaration location (1)");
+
+    position = engine.find_declaration_of("find_symbol_in_namespace.cc", { 13, 8 });
+    if (!position.has_value())
+        FAIL("declaration not found (2)");
+
+
+    if (position.value().file != "find_symbol_in_namespace.cc" || position.value().line != 3 || position.value().column != 4)
+        FAIL("wrong declaration location (2)");
+
+    PASS;
+}
+
 void test_find_array_variable_declaration_single()
 {
     I_TEST(Find 1D Array as a Variable Declaration)
@@ -343,14 +370,6 @@ void test_ast_cpp() {
                     continue; // Position was after the token on the last line
                 }
             }
-
-            // Position is inside the token!
-            dbgln("Token matched: {} [{},{} -> {},{}]"
-                  , TokenInfo::type_to_string(token_info.type)
-                  , token_info.start_column
-                  , token_info.start_line
-                  , token_info.end_column
-                  , token_info.end_line);
         }
     }
 
@@ -371,21 +390,20 @@ std::string read_first_line(const char* filePath) {
 
 int main(int argc, char* argv[]) {
     TESTS_ROOT_DIR = read_first_line("project_source_dir.txt") + "/test";
-#if 0
+
+
     test_complete_local_args();
     test_complete_local_vars();
     test_complete_type();
     test_find_function_declaration();
-#endif
-
     test_find_variable_definition();
-#if 0
+    test_namespace();
     test_find_array_variable_declaration_single();
     test_find_array_variable_declaration_single_empty();
     test_find_array_variable_declaration_double();
     test_complete_includes();
     test_parameters_hint();
     test_ast_cpp();
-#endif
+
     return 0;
 }
