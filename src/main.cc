@@ -358,21 +358,6 @@ void test_ast_cpp() {
     if (position.value().file != filename || position.value().line != 96 || position.value().column < 4)
         FAIL("wrong declaration location");
 
-    for(auto const& token_info : tokens_info) {
-        if(token_info.start_line >= position.value().line && token_info.end_line <= position.value().line ) {
-            if(token_info.start_line == position.value().line) {
-                if(position.value().column < token_info.start_column) {
-                    continue; // The position was before the token on the first line
-                }
-            }
-            if(token_info.end_line == position.value().line) {
-                if(position.value().column > token_info.end_column) {
-                    continue; // Position was after the token on the last line
-                }
-            }
-        }
-    }
-
     PASS;
 }
 
