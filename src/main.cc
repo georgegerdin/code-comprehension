@@ -63,20 +63,24 @@ private:
 
 std::string TESTS_ROOT_DIR = "";
 
-static void add_file(LocalFileDB& filedb, std::string const& name)
-{
-    std::filesystem::path root_dir_path{TESTS_ROOT_DIR};
-    std::filesystem::path name_path{name};
-    auto final_path = root_dir_path / name_path;
-    std::ifstream file(final_path);
+static std::string read_all(std::filesystem::path path) {
+    std::ifstream file(path);
     if(!file)  {
-        dbgln("Unable to load {}", final_path.c_str());
+        dbgln("Unable to load {}", path.c_str());
         throw std::runtime_error("unable to load file");
     }
     std::stringstream buffer;
     buffer << file.rdbuf();
     file.close();
-    auto file_content = buffer.str();
+    return buffer.str();
+}
+
+static void add_file(LocalFileDB& filedb, std::string const& name)
+{
+    std::filesystem::path root_dir_path{TESTS_ROOT_DIR};
+    std::filesystem::path name_path{name};
+    auto final_path = root_dir_path / name_path;
+    auto file_content = read_all(final_path);
     filedb.add(name, file_content);
 }
 
@@ -361,6 +365,38 @@ void test_ast_cpp() {
     PASS;
 }
 
+void test_parser_cpp() {
+    I_TEST("Find Variable Declaration in Parser.cpp")
+
+
+    auto filename = "Parser.cpp";
+    LocalFileDB filedb;
+    add_file(filedb, filename);
+    add_file(filedb, "Parser.h");
+    CodeComprehension::Cpp::CppComprehensionEngine engine(filedb);
+    auto position = engine.find_declaration_of(filename, { 34, 42 });
+    if (!position.has_value())
+        FAIL("declaration not found");
+
+    dbgln("{} {} {}", position.value().file, position.value().line, position.value().column);
+    if (position.value().file != "Parser.h" || position.value().line != 195 || position.value().column != 4)
+        FAIL("wrong declaration location");
+
+    PASS;
+
+/*
+    auto c_string = read_all(std::filesystem::path{TESTS_ROOT_DIR} / "Parser.cpp");
+    ::Cpp::Preprocessor preprocessor("test.cc", c_string);
+    auto results = preprocessor.process_and_lex();
+    ::Cpp::Parser parser(results, "test.cc");
+    auto translation_unit = parser.parse();
+
+    FILE* debug_output = fopen("debug_output.txt", "w");
+    translation_unit->dump(debug_output);
+    fclose(debug_output);
+    */
+}
+
 std::string read_first_line(const char* filePath) {
     std::ifstream file(filePath);
     if (!file.is_open()) {
@@ -376,7 +412,6 @@ std::string read_first_line(const char* filePath) {
 int main(int argc, char* argv[]) {
     TESTS_ROOT_DIR = read_first_line("project_source_dir.txt") + "/test";
 
-
     test_complete_local_args();
     test_complete_local_vars();
     test_complete_type();
@@ -389,6 +424,8 @@ int main(int argc, char* argv[]) {
     test_complete_includes();
     test_parameters_hint();
     test_ast_cpp();
+    test_parser_cpp();
+
 
     return 0;
 }

@@ -12,5 +12,13 @@ int foo()
 namespace S {
     int bar() {
         f = 1;
+        int j;
     }
+
+
+    class R final {
+        int i;
+    };
 }
+
+

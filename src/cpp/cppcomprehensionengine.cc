@@ -552,9 +552,6 @@ intrusive_ptr<Cpp::Declaration const> CppComprehensionEngine::find_declaration_o
         bool match_parameter = target_decl.value().type == TargetDeclaration::Variable && symbol.declaration->is_parameter();
         bool match_scope = target_decl.value().type == TargetDeclaration::Scope && (symbol.declaration->is_namespace() || symbol.declaration->is_struct_or_class());
 
-        if(target_decl->name == "another_foo" && symbol.name.name == "another_foo")
-            dbgln("looking for another_foo");
-
         if (match_property) {
             // FIXME: This is not really correct, we also need to check that the type of the struct/class matches (not just the property name)
             if (symbol.name.name == target_decl.value().name) {
